@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,7 +10,7 @@ namespace CrossExchange
     {
         protected ExchangeContext _dbContext { get; set; }
 
-        public async Task<T> GetAsync(string id)
+        public async Task<T> GetAsync(int id)
         {
             return await _dbContext.FindAsync<T>(id);
         }
@@ -21,13 +22,13 @@ namespace CrossExchange
 
         public async Task InsertAsync(T entity)
         {
-            _dbContext.Set<T>().Add(entity);
+            _dbContext.Add(entity);
             await _dbContext.SaveChangesAsync();
         }
 
         public async Task UpdateAsync(T entity)
         {
-            _dbContext.Entry(entity).State = EntityState.Modified;
+            _dbContext.Update(entity);
             await _dbContext.SaveChangesAsync();
         }
     }

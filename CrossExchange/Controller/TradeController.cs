@@ -25,9 +25,9 @@ namespace CrossExchange.Controller
 
 
         [HttpGet("{portfolioid}")]
-        public async Task<IActionResult> GetAllTradings([FromRoute]int portFolioid)
+        public IActionResult GetAllTradings([FromRoute]int portFolioId)
         {
-            var trade = _tradeRepository.Query().Where(x => x.PortfolioId.Equals(portFolioid));
+            var trade = _tradeRepository.Query().Where(x => x.PortfolioId.Equals(portFolioId)).ToList();
             return Ok(trade);
         }
 
@@ -49,11 +49,73 @@ namespace CrossExchange.Controller
 
         *************************************************************************************************************************************/
 
-        [HttpPost]
-        public async Task<IActionResult> Post([FromBody]TradeModel model)
+        [HttpPost("buy")]
+        public async Task<IActionResult> Buy([FromBody]TradeModel tradeModel)
         {
-            return Created("Trade", model);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            //Getting portfolio to check if it is registered
+            var portFolio = await _portfolioRepository.GetAsync(tradeModel.PortfolioId);
+            if (portFolio == null) { return BadRequest("There is no such kind of registered portfolio."); }
+
+            // Getting share to check if it is registered
+            var share = _shareRepository.Query().Where(s => s.Symbol == tradeModel.Symbol).OrderByDescending(o => o.TimeStamp).FirstOrDefault();
+            if (share == null) { return BadRequest("There is no such kind of registered share."); }
+
+            //Making a new trade
+            var trade = new Trade() { Symbol = tradeModel.Symbol, NoOfShares = tradeModel.NoOfShares, PortfolioId = portFolio.Id, Action = "BUY", Price = share.Rate * tradeModel.NoOfShares };
+            portFolio.Trades.Add(trade);
+
+            //Updating
+            await _portfolioRepository.UpdateAsync(portFolio);
+
+            return Created("Trade", trade);
         }
-        
+
+        [HttpPost("sell")]
+        public async Task<IActionResult> Sell([FromBody]TradeModel tradeModel)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // Getting share to check if it is registered
+            var share = _shareRepository.Query().Where(s => s.Symbol == tradeModel.Symbol).OrderByDescending(o => o.TimeStamp).FirstOrDefault();
+            if (share == null) { return BadRequest("There is no such kind of registered share."); }
+
+            //Getting portfolio to check if it is registered
+            var portFolio = await _portfolioRepository.GetAsync(tradeModel.PortfolioId);
+            if (portFolio == null) { return BadRequest("There is no such kind of registered portfolio."); }
+
+            //Checking portfolio if it contains this kind of share
+            if (!portFolio.Trades.Any(s => s.Symbol == tradeModel.Symbol)) { return BadRequest("You do not have this kind of share to sell."); }
+
+            //Checking portfolio if it contains enough count of share to sell
+            if (GetAvailableShareCount(portFolio) < tradeModel.NoOfShares) { return BadRequest("There are not enough share to sell."); }
+
+            //Making a new trade
+            var trade = new Trade() { Symbol = tradeModel.Symbol, NoOfShares = tradeModel.NoOfShares, PortfolioId = portFolio.Id, Action = "SELL", Price = share.Rate * tradeModel.NoOfShares };
+            portFolio.Trades.Add(trade);
+
+            //Updating
+            await _portfolioRepository.UpdateAsync(portFolio);
+
+            return Created("Trade", trade);
+        }
+
+        /// <summary>
+        /// Getting available share count from portfolio
+        /// </summary>
+        /// <param name="portFolio"></param>
+        /// <returns></returns>
+        private int GetAvailableShareCount(Portfolio portFolio)
+        {
+            return portFolio.Trades.Where(s => s.Action == "BUY").Sum(s => s.NoOfShares) - portFolio.Trades.Where(s => s.Action == "SELL").Sum(s => s.NoOfShares);
+        }
+
     }
 }

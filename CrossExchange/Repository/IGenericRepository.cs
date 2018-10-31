@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -5,7 +6,7 @@ namespace CrossExchange
 {
     public interface IGenericRepository<T>
     {
-        Task<T> GetAsync(string id);
+        Task<T> GetAsync(int id);
 
         IQueryable<T> Query();
 

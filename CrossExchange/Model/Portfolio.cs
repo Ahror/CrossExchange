@@ -10,7 +10,7 @@ namespace CrossExchange
         [Required]
         public string Name { get; set; }
         
-        public List<Trade> Trade { get; set; }
+        public List<Trade> Trades { get; set; }
 
     }
 }

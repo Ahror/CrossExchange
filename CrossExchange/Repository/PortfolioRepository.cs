@@ -12,7 +12,7 @@ namespace CrossExchange
 
         public IQueryable<Portfolio> GetAll()
         {
-            return _dbContext.Portfolios.Include(x => x.Trade).AsQueryable();
+            return _dbContext.Portfolios.Include(x => x.Trades).AsQueryable();
         }
     }
 }

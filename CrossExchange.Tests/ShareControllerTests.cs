@@ -16,7 +16,7 @@ namespace CrossExchange.Tests
         public ShareControllerTests()
         {
             _shareController = new ShareController(_shareRepositoryMock.Object);
-        }
+        } 
 
         [Test]
         public async Task Post_ShouldInsertHourlySharePrice()
@@ -25,7 +25,6 @@ namespace CrossExchange.Tests
             {
                 Symbol = "CBI",
                 Rate = 330.0M,
-                TimeStamp = new DateTime(2018, 08, 17, 5, 0, 0)
             };
 
             // Arrange
